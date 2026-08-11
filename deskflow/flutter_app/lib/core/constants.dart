@@ -1,8 +1,8 @@
 /// Fill these in with your Supabase project credentials.
 /// Get them from: Supabase Dashboard -> Project Settings -> API
 class SupabaseConfig {
-  static const String url = 'https://YOUR-PROJECT.supabase.co';
-  static const String anonKey = 'YOUR-ANON-KEY';
+  static const String url = 'https://nwfybyxwxtydwovdfdco.supabase.co';
+  static const String anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53ZnlieXh3eHR5ZHdvdmRmZGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0ODA3MjEsImV4cCI6MjEwMjA1NjcyMX0.zQ8myRIWKsNs2d6IEYY_9bqANR1bWvPBZfYrt4Frl9s';
 }
 
 /// Mirrors the `user_role` enum defined in the Postgres schema.
