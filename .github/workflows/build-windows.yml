@@ -1,0 +1,35 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Prepare Windows project
+        run: |
+          cd deskflow/flutter_app
+          flutter config --enable-windows-desktop
+          flutter create --platforms=windows . --no-pub
+          flutter pub get
+
+      - name: Build Windows release
+        run: |
+          cd deskflow/flutter_app
+          flutter build windows --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeskFlow-Windows
+          path: deskflow/flutter_app/build/windows/x64/runner/Release/

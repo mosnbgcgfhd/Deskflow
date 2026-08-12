@@ -12,6 +12,11 @@ class AuthService {
   Future<AuthResponse> signIn({required String email, required String password}) {
     return _client.auth.signInWithPassword(email: email, password: password);
   }
+  Future<void> setPresence(String status) async {
+  final id = _client.auth.currentUser?.id;
+  if (id == null) return;
+  await _client.from('profiles').update({'presence': status}).eq('id', id);
+}
 
   Future<void> signOut() => _client.auth.signOut();
 

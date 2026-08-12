@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'core/constants.dart';
 import 'core/theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/create_organization_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'services/auth_service.dart';
+import 'services/app_close_listener.dart'
+    if (dart.library.html) 'services/app_close_listener_web.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +16,23 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  // جلسة محفوظة => علّم المستخدم online
+  if (Supabase.instance.client.auth.currentSession != null) {
+    AuthService().setPresence('online');
+  }
+
+  // قفل تاب المتصفح => offline (ويب بس، على الويندوز الـ sign-out بيتكفل بيها)
+  registerAppCloseListener(() {
+    final id = Supabase.instance.client.auth.currentUser?.id;
+    if (id != null) {
+      Supabase.instance.client
+          .from('profiles')
+          .update({'presence': 'offline'})
+          .eq('id', id);
+    }
+  });
+
   runApp(const DeskFlowApp());
 }
 
@@ -29,12 +50,6 @@ class DeskFlowApp extends StatelessWidget {
   }
 }
 
-/// Decides where to send an already-authenticated user:
-/// - No session at all -> Login
-/// - Session exists but no `profiles` row yet (e.g. they confirmed
-///   their email and came back, but never finished naming their org)
-///   -> Create Organization, pre-filled to skip the sign-up fields
-/// - Session + profile -> Dashboard
 class _RootRouter extends StatefulWidget {
   const _RootRouter();
 
@@ -63,7 +78,6 @@ class _RootRouterState extends State<_RootRouter> {
           .single();
       return const DashboardScreen();
     } catch (_) {
-      // Signed in, but no organization/profile yet.
       return const CreateOrganizationScreen();
     }
   }

@@ -3,6 +3,7 @@ import '../../core/theme.dart';
 import '../../services/auth_service.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'create_organization_screen.dart';
+import 'join_organization_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -90,6 +91,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       MaterialPageRoute(builder: (_) => const CreateOrganizationScreen()),
                     ),
                     child: const Text('First time here? Create your organization'),
+                  ),
+                  // ⬇️ الزرار الناقص اللي يخلي الموظف الجديد يدخل عن طريق دعوته
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const JoinOrganizationScreen()),
+                    ),
+                    child: const Text('Have an invite? Join your organization'),
                   ),
                 ],
               ),

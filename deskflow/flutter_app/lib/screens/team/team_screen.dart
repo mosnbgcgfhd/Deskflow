@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../models/profile.dart';
 import '../../services/member_service.dart';
+import '../../core/constants.dart';
 
 class TeamScreen extends StatefulWidget {
   final UserRole currentUserRole;
@@ -13,21 +15,71 @@ class TeamScreen extends StatefulWidget {
 
 class _TeamScreenState extends State<TeamScreen> {
   final _memberService = MemberService();
+  final _client = Supabase.instance.client;
+
   List<Profile> _members = [];
+  RealtimeChannel? _presenceChannel;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _subscribeToPresenceChanges();
+  }
+
+  @override
+  void dispose() {
+    final ch = _presenceChannel;
+    if (ch != null) _client.removeChannel(ch);
+    super.dispose();
   }
 
   Future<void> _load() async {
     final members = await _memberService.fetchOrgMembers();
+    if (!mounted) return;
     setState(() {
       _members = members;
       _loading = false;
     });
+  }
+
+  /// نستمع لأي تحديث في حقل presence في جدول profiles لحظياً.
+  void _subscribeToPresenceChanges() {
+    _presenceChannel = _client
+        .channel('team-presence')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'profiles',
+          callback: (payload) {
+            if (!mounted) return;
+            final newRow = payload.newRecord;
+            final id = newRow['id'] as String;
+            final presence = newRow['presence'] as String;
+
+            setState(() {
+              final idx = _members.indexWhere((m) => m.id == id);
+              if (idx >= 0) {
+                _members[idx] = Profile(
+                  id: id,
+                  organizationId: _members[idx].organizationId,
+                  fullName: _members[idx].fullName,
+                  role: _members[idx].role,
+                  title: _members[idx].title,
+                  presence: presence,
+                );
+              }
+            });
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'profiles',
+          callback: (_) => _load(),
+        )
+        .subscribe();
   }
 
   Future<void> _inviteDialog() async {
@@ -136,6 +188,7 @@ class _TeamScreenState extends State<TeamScreen> {
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final m = _members[i];
+                final isOnline = m.presence == 'online';
                 return ListTile(
                   leading: CircleAvatar(child: Text(m.fullName.isNotEmpty ? m.fullName[0] : '?')),
                   title: Text(m.fullName),
@@ -144,9 +197,10 @@ class _TeamScreenState extends State<TeamScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.circle,
-                          size: 10, color: m.presence == 'online' ? AppTheme.success : Colors.grey),
+                          size: 10, color: isOnline ? AppTheme.success : Colors.grey),
                       const SizedBox(width: 6),
-                      Text(m.presence, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                      Text(m.presence,
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                     ],
                   ),
                 );
