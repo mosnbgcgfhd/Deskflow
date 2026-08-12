@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeskFlow — Operations, in one window</title>
+<meta name="description" content="DeskFlow is a Windows desktop platform for running projects, tasks, and teams from one place, with each company's data fully isolated in its own workspace.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12151c;
+    --panel:#1a1f29;
+    --panel-2:#20263300;
+    --line:#2b3242;
+    --paper:#e9ebef;
+    --muted:#8b93a6;
+    --muted-2:#5c6478;
+    --blue:#5b8def;
+    --amber:#f0a531;
+    --green:#3ecb84;
+    --radius:10px;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    line-height:1.1;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  p{margin:0;}
+  a{color:inherit;text-decoration:none;}
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  :focus-visible{
+    outline:2px solid var(--blue);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 28px;}
+  @media (max-width:720px){ .wrap{padding:0 20px;} }
+
+  /* ---------- Nav ---------- */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(18,21,28,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-row{
+    display:flex; align-items:center; justify-content:space-between;
+    height:64px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600; font-size:18px;
+  }
+  .brand-mark{
+    width:22px; height:22px; border-radius:5px;
+    background:linear-gradient(135deg, var(--blue), var(--green) 130%);
+    display:grid; place-items:center;
+    position:relative;
+  }
+  .brand-mark::after{
+    content:"";
+    width:8px; height:8px; border-radius:2px;
+    background:var(--ink);
+  }
+  .nav-links{ display:flex; gap:32px; align-items:center; }
+  .nav-links a{
+    font-size:14px; color:var(--muted);
+    transition:color .15s ease;
+  }
+  .nav-links a:hover{ color:var(--paper); }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:10px 18px;
+    border-radius:7px;
+    font-size:14px; font-weight:500;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease, border-color .15s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{ background:var(--paper); color:var(--ink); }
+  .btn-primary:hover{ transform:translateY(-1px); background:#fff; }
+  .btn-ghost{ border-color:var(--line); color:var(--paper); }
+  .btn-ghost:hover{ border-color:var(--muted-2); }
+  .nav-cta{ display:flex; gap:10px; align-items:center; }
+  .menu-toggle{ display:none; background:none; border:none; color:var(--paper); cursor:pointer; padding:8px; }
+
+  @media (max-width: 860px){
+    .nav-links{ display:none; }
+    .menu-toggle{ display:block; }
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding:88px 0 64px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:56px;
+    align-items:center;
+  }
+  @media (max-width:960px){
+    .hero-grid{ grid-template-columns:1fr; gap:48px; }
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:11px; color:var(--muted);
+    margin-bottom:18px;
+  }
+  .eyebrow-dot{ width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px rgba(62,203,132,0.15); }
+  .hero h1{
+    font-size:clamp(34px, 5vw, 54px);
+    max-width:600px;
+  }
+  .hero h1 em{
+    font-style:normal;
+    background:linear-gradient(100deg, var(--blue), var(--green));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .hero-sub{
+    margin-top:20px;
+    max-width:480px;
+    font-size:17px;
+    color:var(--muted);
+  }
+  .hero-actions{
+    display:flex; gap:12px; margin-top:32px; flex-wrap:wrap;
+  }
+  .hero-note{
+    margin-top:16px; font-size:12.5px; color:var(--muted-2);
+  }
+
+  /* ---------- Signature: live status board ---------- */
+  .board{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    position:relative;
+  }
+  .board-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px; padding:0 4px;
+  }
+  .board-head .mono{ font-size:11px; color:var(--muted); }
+  .board-dots{ display:flex; gap:6px; }
+  .board-dots span{ width:8px; height:8px; border-radius:50%; background:var(--line); }
+  .board-cols{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+  }
+  .board-col{
+    background:#161b24;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:10px 8px;
+    min-height:230px;
+  }
+  .board-col-label{
+    font-size:9.5px;
+    color:var(--muted-2);
+    margin-bottom:10px;
+    padding:0 2px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .board-col-label .dot{ width:6px; height:6px; border-radius:50%; }
+  .col-todo .dot{ background:var(--muted-2); }
+  .col-progress .dot{ background:var(--amber); }
+  .col-review .dot{ background:var(--blue); }
+  .col-done .dot{ background:var(--green); }
+
+  .chip{
+    background:#1e2430;
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:9px 9px;
+    margin-bottom:8px;
+    font-size:11.5px;
+    color:#c7cbd6;
+    transition: transform 1.1s cubic-bezier(.4,0,.2,1), opacity .6s ease, border-color .6s ease;
+  }
+  .chip .chip-bar{
+    height:3px; width:60%; border-radius:2px; margin-bottom:7px;
+    background:var(--muted-2); opacity:.5;
+  }
+  .chip.p-high .chip-bar{ background:var(--amber); opacity:1;}
+  .chip.p-low .chip-bar{ background:var(--green); opacity:1;}
+
+  @media (max-width:960px){
+    .board-cols{ grid-template-columns:repeat(2,1fr); }
+    .board-col{ min-height:160px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .chip{ transition:none; }
+  }
+
+  /* ---------- Stat strip ---------- */
+  .stats{
+    border-bottom:1px solid var(--line);
+    padding:28px 0;
+  }
+  .stats-row{
+    display:flex; gap:0;
+    justify-content:space-between;
+    flex-wrap:wrap;
+  }
+  .stat{
+    flex:1; min-width:150px;
+    padding:0 20px;
+    border-left:1px solid var(--line);
+  }
+  .stat:first-child{ border-left:none; padding-left:0; }
+  .stat .num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:26px; font-weight:600;
+  }
+  .stat .label{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  /* ---------- Section shell ---------- */
+  section{ padding:88px 0; }
+  .section-head{ max-width:620px; margin-bottom:52px; }
+  .section-head .eyebrow{ margin-bottom:14px; }
+  .section-head h2{ font-size:clamp(26px, 3.4vw, 36px); }
+  .section-head p{ margin-top:14px; color:var(--muted); font-size:16px; }
+
+  /* ---------- Feature rows ---------- */
+  .feature-row{
+    display:grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap:56px;
+    align-items:center;
+    padding:56px 0;
+    border-top:1px solid var(--line);
+  }
+  .feature-row:first-of-type{ border-top:none; padding-top:0; }
+  .feature-row.reverse .feature-visual{ order:2; }
+  .feature-row.reverse .feature-copy{ order:1; }
+  @media (max-width:900px){
+    .feature-row, .feature-row.reverse{ grid-template-columns:1fr; }
+    .feature-row.reverse .feature-visual, .feature-row.reverse .feature-copy{ order:initial; }
+  }
+  .feature-tag{
+    font-size:11px; color:var(--blue);
+    margin-bottom:14px;
+    display:inline-block;
+  }
+  .feature-copy h3{ font-size:24px; margin-bottom:14px; }
+  .feature-copy p{ color:var(--muted); font-size:15.5px; margin-bottom:18px; }
+  .feature-list{ list-style:none; padding:0; margin:0; display:grid; gap:10px; }
+  .feature-list li{
+    font-size:14px; color:#c3c8d3;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .feature-list li::before{
+    content:"";
+    width:5px; height:5px; border-radius:50%;
+    background:var(--green);
+    margin-top:8px; flex-shrink:0;
+  }
+
+  .visual-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+  }
+  .visual-card .mono{ font-size:10px; color:var(--muted-2); margin-bottom:12px; }
+
+  /* Projects mock */
+  .proj-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .proj-card{ background:#161b24; border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .proj-card .t{ font-size:13px; font-weight:500; margin-bottom:6px; }
+  .proj-card .bar{ height:4px; background:#232a37; border-radius:2px; overflow:hidden; }
+  .proj-card .bar i{ display:block; height:100%; background:var(--blue); }
+
+  /* Team / RBAC mock */
+  .rbac-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--line); }
+  .rbac-row:first-child{ border-top:none; }
+  .rbac-role{ width:78px; font-size:11px; color:var(--muted); }
+  .rbac-perms{ display:flex; gap:6px; flex-wrap:wrap; }
+  .perm{ font-size:10px; padding:3px 7px; border-radius:5px; border:1px solid var(--line); color:var(--muted-2); }
+  .perm.on{ color:var(--paper); border-color:var(--blue); background:rgba(91,141,239,0.08); }
+
+  /* Documents mock */
+  .doc-row{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .doc-row:first-child{ border-top:none; }
+  .doc-name{ display:flex; gap:8px; align-items:center; color:#c7cbd6; }
+  .doc-icon{ width:16px; height:16px; border-radius:3px; background:#232a37; flex-shrink:0; }
+  .doc-meta{ color:var(--muted-2); }
+
+  /* Activity mock */
+  .act-row{ display:flex; gap:10px; align-items:baseline; padding:7px 0; font-size:12.5px; }
+  .act-time{ color:var(--muted-2); width:44px; flex-shrink:0; }
+  .act-dot{ width:5px; height:5px; border-radius:50%; background:var(--blue); flex-shrink:0; margin-top:6px; }
+  .act-text{ color:#c7cbd6; }
+
+  /* Reports mock */
+  .rep-bar-row{ display:flex; align-items:center; gap:10px; padding:6px 0; font-size:11.5px; }
+  .rep-name{ width:56px; color:var(--muted); flex-shrink:0; }
+  .rep-track{ flex:1; height:8px; background:#161b24; border-radius:4px; overflow:hidden; }
+  .rep-track i{ display:block; height:100%; background:var(--green); }
+  .rep-val{ width:24px; text-align:right; color:var(--muted-2); flex-shrink:0; }
+
+  /* ---------- Permissions band ---------- */
+  .roles-band{
+    border-top:1px solid var(--line);
+    background:var(--panel);
+  }
+  .roles-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    margin-top:8px;
+  }
+  @media (max-width:820px){ .roles-grid{ grid-template-columns:1fr; } }
+  .role-card{ background:var(--ink); padding:28px 24px; }
+  .role-card h4{ font-family:'Space Grotesk',sans-serif; font-size:17px; margin-bottom:6px; }
+  .role-card .desc{ font-size:13px; color:var(--muted); margin-bottom:18px; }
+  .role-card ul{ list-style:none; padding:0; margin:0; display:grid; gap:9px; }
+  .role-card li{ font-size:13px; display:flex; gap:8px; align-items:center; color:#c3c8d3; }
+  .role-card li.no{ color:var(--muted-2); }
+  .check{ width:14px; flex-shrink:0; font-family:'IBM Plex Mono',monospace; font-size:12px; }
+  .check.yes{ color:var(--green); }
+  .check.no{ color:var(--muted-2); }
+
+  /* ---------- Download ---------- */
+  .download{
+    text-align:center;
+    border-top:1px solid var(--line);
+  }
+  .download h2{ font-size:clamp(28px,4vw,42px); max-width:640px; margin:0 auto; }
+  .download p.lead{ color:var(--muted); margin:18px auto 0; max-width:480px; font-size:16px; }
+  .download-actions{ display:flex; gap:12px; justify-content:center; margin-top:32px; flex-wrap:wrap; }
+  .download-req{ margin-top:20px; font-size:12.5px; color:var(--muted-2); }
+
+  .signup{
+    max-width:420px; margin:40px auto 0;
+    display:flex; gap:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:6px; border-radius:9px;
+  }
+  .signup input{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--paper); font-family:inherit; font-size:14px; padding:10px 12px;
+  }
+  .signup input::placeholder{ color:var(--muted-2); }
+  .signup-note{ font-size:11.5px; color:var(--muted-2); margin-top:10px; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    border-top:1px solid var(--line);
+    padding:40px 0;
+  }
+  .foot-row{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
+  }
+  .foot-links{ display:flex; gap:24px; }
+  .foot-links a{ font-size:13px; color:var(--muted); }
+  .foot-links a:hover{ color:var(--paper); }
+  .foot-copy{ font-size:12.5px; color:var(--muted-2); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-row">
+    <a href="#top" class="brand"><span class="brand-mark"></span>DeskFlow</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#permissions">Permissions</a>
+      <a href="#download">Download</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#download" class="btn btn-primary">Download for Windows</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow mono"><span class="eyebrow-dot"></span>Windows desktop · every company gets its own workspace</div>
+      <h1>Run the company<br>without the <em>spreadsheet chaos</em>.</h1>
+      <p class="hero-sub">Projects, tasks, files, and your team's activity — in one desktop app, updating live as your team works. Each company's data lives in its own isolated workspace; no one outside it can see a row of it.</p>
+      <div class="hero-actions">
+        <a href="#download" class="btn btn-primary">Download for Windows</a>
+        <a href="#features" class="btn btn-ghost">See how it works</a>
+      </div>
+      <p class="hero-note">Windows 10 / 11 · free for teams up to 10 during early access</p>
+    </div>
+
+    <div class="board" id="board" aria-hidden="true">
+      <div class="board-head">
+        <span class="mono">e-commerce-platform.deskflow</span>
+        <div class="board-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="board-cols">
+        <div class="board-col col-todo">
+          <div class="board-col-label"><span class="dot"></span>To do</div>
+          <div id="col-todo"></div>
+        </div>
+        <div class="board-col col-progress">
+          <div class="board-col-label"><span class="dot"></span>In progress</div>
+          <div id="col-progress"></div>
+        </div>
+        <div class="board-col col-review">
+          <div class="board-col-label"><span class="dot"></span>In review</div>
+          <div id="col-review"></div>
+        </div>
+        <div class="board-col col-done">
+          <div class="board-col-label"><span class="dot"></span>Done</div>
+          <div id="col-done"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="wrap stats-row">
+    <div class="stat"><div class="num">1</div><div class="label">workspace per company, fully isolated</div></div>
+    <div class="stat"><div class="num">3</div><div class="label">fixed roles: admin, manager, employee</div></div>
+    <div class="stat"><div class="num">&lt;1s</div><div class="label">for a change to reach every open board</div></div>
+    <div class="stat"><div class="num">0</div><div class="label">rows another company can ever query</div></div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow mono"><span class="eyebrow-dot"></span>What's inside</div>
+      <h2>Six screens, one source of truth.</h2>
+      <p>No syncing spreadsheets between departments, no "let me check with the team" — everyone's looking at the same live data.</p>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-copy">
+        <span class="feature-tag mono">Module / Projects</span>
+        <h3>Projects hold everything that belongs to them.</h3>
+        <p>Tasks, files, members, and history all live under the project they belong to — open one and you have the full picture, not five tabs.</p>
+        <ul class="feature-list">
+          <li>Create a project, add the people working on it</li>
+          <li>Overview, tasks, team, files, and activity in one view</li>
+          <li>Nothing about a project is visible outside its company workspace</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="visual-card">
+          <div class="mono">Projects</div>
+          <div class="proj-grid">
+            <div class="proj-card"><div class="t">E-Commerce Platform</div><div class="bar"><i style="width:82%"></i></div></div>
+            <div class="proj-card"><div class="t">Mobile Onboarding</div><div class="bar"><i style="width:41%"></i></div></div>
+            <div class="proj-card"><div class="t">Internal Design System</div><div class="bar"><i style="width:63%"></i></div></div>
+            <div class="proj-card"><div class="t">Q3 Marketing Site</div><div class="bar"><i style="width:19%"></i></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-copy">
+        <span class="feature-tag mono">Module / Team</span>
+        <h3>Three roles. No permission spreadsheet required.</h3>
+        <p>Admin, manager, employee — that's the whole model. Everyone knows exactly what they can touch, and there's nothing to misconfigure.</p>
+        <ul class="feature-list">
+          <li>Admins run company settings and every project</li>
+          <li>Managers run projects, tasks, and the team — not billing</li>
+          <li>Employees see their work and the projects they're on</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="visual-card">
+          <div class="mono">Roles at a glance</div>
+          <div class="rbac-row"><div class="rbac-role">Admin</div><div class="rbac-perms"><span class="perm on">Projects</span><span class="perm on">Team</span><span class="perm on">Reports</span><span class="perm on">Settings</span></div></div>
+          <div class="rbac-row"><div class="rbac-role">Manager</div><div class="rbac-perms"><span class="perm on">Projects</span><span class="perm on">Team</span><span class="perm on">Reports</span><span class="perm">Settings</span></div></div>
+          <div class="rbac-row"><div class="rbac-role">Employee</div><div class="rbac-perms"><span class="perm">Projects</span><span class="perm">Team</span><span class="perm">Reports</span><span class="perm">Settings</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-copy">
+        <span class="feature-tag mono">Module / Documents</span>
+        <h3>Files stay with the work they belong to.</h3>
+        <p>Requirements, designs, contracts — uploaded to the project, tagged with who uploaded them and when, gone the moment someone deletes the project.</p>
+        <ul class="feature-list">
+          <li>Drag in a PDF, spreadsheet, or design file</li>
+          <li>Every file shows its uploader and upload date</li>
+          <li>Access follows the same company-isolated rules as everything else</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="visual-card">
+          <div class="mono">E-Commerce / Files</div>
+          <div class="doc-row"><div class="doc-name"><span class="doc-icon"></span>requirements.pdf</div><div class="doc-meta">Sara · today</div></div>
+          <div class="doc-row"><div class="doc-name"><span class="doc-icon"></span>API-documentation.pdf</div><div class="doc-meta">Omar · yesterday</div></div>
+          <div class="doc-row"><div class="doc-name"><span class="doc-icon"></span>design.fig</div><div class="doc-meta">Lina · 3 days ago</div></div>
+          <div class="doc-row"><div class="doc-name"><span class="doc-icon"></span>project-plan.xlsx</div><div class="doc-meta">Ahmed · 1 week ago</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-copy">
+        <span class="feature-tag mono">Module / Activity &amp; Reports</span>
+        <h3>Know what happened, and how the team is doing.</h3>
+        <p>Every action lands in one feed the moment it happens. Reports turn that same history into completion rates and per-person totals — no exporting anything to find out.</p>
+        <ul class="feature-list">
+          <li>See who did what, down to the minute</li>
+          <li>Track completed, in-progress, and overdue work at a glance</li>
+          <li>Compare team output without leaving the app</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+        <div class="visual-card">
+          <div class="mono">Activity</div>
+          <div class="act-row"><div class="act-time">10:42</div><div class="act-dot" style="background:var(--blue)"></div><div class="act-text">Ahmed created a task</div></div>
+          <div class="act-row"><div class="act-time">10:38</div><div class="act-dot" style="background:var(--green)"></div><div class="act-text">Sara uploaded requirements.pdf</div></div>
+          <div class="act-row"><div class="act-time">10:31</div><div class="act-dot" style="background:var(--green)"></div><div class="act-text">Omar completed API Authentication</div></div>
+          <div class="act-row"><div class="act-time">10:20</div><div class="act-dot" style="background:var(--amber)"></div><div class="act-text">Admin added Lina to the project</div></div>
+          <div style="height:1px;background:var(--line);margin:14px 0"></div>
+          <div class="mono" style="margin-bottom:10px">Team performance</div>
+          <div class="rep-bar-row"><div class="rep-name">Ahmed</div><div class="rep-track"><i style="width:88%"></i></div><div class="rep-val">42</div></div>
+          <div class="rep-bar-row"><div class="rep-name">Omar</div><div class="rep-track"><i style="width:79%"></i></div><div class="rep-val">38</div></div>
+          <div class="rep-bar-row"><div class="rep-name">Sara</div><div class="rep-track"><i style="width:65%"></i></div><div class="rep-val">31</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="permissions" class="roles-band">
+  <div class="wrap">
+    <div class="section-head" style="margin-bottom:8px">
+      <div class="eyebrow mono"><span class="eyebrow-dot"></span>Access, decided once</div>
+      <h2>Exactly three roles. On purpose.</h2>
+      <p>Custom permission builders are how access control quietly turns into a second job. DeskFlow ships with three roles that cover how a small company actually runs — nothing to configure, nothing to get wrong.</p>
+    </div>
+    <div class="roles-grid">
+      <div class="role-card">
+        <h4>Admin</h4>
+        <div class="desc">The person who set up the company. Usually one or two people.</div>
+        <ul>
+          <li><span class="check yes">✓</span>Everything managers can do</li>
+          <li><span class="check yes">✓</span>Company settings</li>
+          <li><span class="check yes">✓</span>Invite and remove employees</li>
+        </ul>
+      </div>
+      <div class="role-card">
+        <h4>Manager</h4>
+        <div class="desc">Runs projects and people, without touching the company account.</div>
+        <ul>
+          <li><span class="check yes">✓</span>Projects and tasks</li>
+          <li><span class="check yes">✓</span>Team and reports</li>
+          <li><span class="check no">–</span>Company settings</li>
+        </ul>
+      </div>
+      <div class="role-card">
+        <h4>Employee</h4>
+        <div class="desc">Focused on their own work and the projects they're part of.</div>
+        <ul>
+          <li><span class="check yes">✓</span>Their tasks</li>
+          <li><span class="check yes">✓</span>Projects they're assigned to</li>
+          <li><span class="check no">–</span>Reports and company settings</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download" class="download">
+  <div class="wrap">
+    <div class="eyebrow mono" style="justify-content:center"><span class="eyebrow-dot"></span>Windows 10 / 11</div>
+    <h2>Get your team onto one workspace.</h2>
+    <p class="lead">DeskFlow is currently in early access. Leave your email and we'll send the installer and setup steps directly — no account needed to ask.</p>
+
+    <form class="signup" id="signupForm">
+      <input type="email" id="signupEmail" placeholder="you@company.com" required aria-label="Email address">
+      <button type="submit" class="btn btn-primary">Request access</button>
+    </form>
+    <p class="signup-note" id="signupNote">We'll open your email app with a pre-filled request — nothing is sent from this page.</p>
+
+    <div class="download-req">Windows 10 or later · one admin account per company · no credit card to request access</div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <a href="#top" class="brand"><span class="brand-mark"></span>DeskFlow</a>
+    <div class="foot-links">
+      <a href="#features">Features</a>
+      <a href="#permissions">Permissions</a>
+      <a href="#download">Download</a>
+    </div>
+    <div class="foot-copy">© 2026 DeskFlow. Built for small teams that outgrew spreadsheets.</div>
+  </div>
+</footer>
+
+<script>
+  // Signature hero animation: a small, self-contained Kanban board that
+  // ticks tasks across columns on an interval — the same status model
+  // (todo -> in progress -> review -> done) the real product uses.
+  (function(){
+    const cols = {
+      todo: document.getElementById('col-todo'),
+      progress: document.getElementById('col-progress'),
+      review: document.getElementById('col-review'),
+      done: document.getElementById('col-done'),
+    };
+    if(!cols.todo) return;
+
+    const order = ['todo','progress','review','done'];
+    let tasks = [
+      {id:1, name:'Build authentication API', priority:'high', col:'progress'},
+      {id:2, name:'Landing page copy', priority:'low', col:'todo'},
+      {id:3, name:'Dashboard UI review', priority:'', col:'review'},
+      {id:4, name:'Database schema', priority:'high', col:'done'},
+      {id:5, name:'Payment webhook', priority:'', col:'todo'},
+      {id:6, name:'Onboarding email flow', priority:'low', col:'progress'},
+    ];
+
+    function render(){
+      order.forEach(key => { cols[key].innerHTML = ''; });
+      tasks.forEach(t => {
+        const el = document.createElement('div');
+        el.className = 'chip' + (t.priority ? ' p-' + t.priority : '');
+        el.innerHTML = '<div class="chip-bar"></div>' + t.name;
+        cols[t.col].appendChild(el);
+      });
+    }
+
+    render();
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduceMotion) return;
+
+    setInterval(() => {
+      // move one random task forward one column (wrapping done -> todo,
+      // as if a fresh similar task entered the board)
+      const movable = tasks.filter(t => true);
+      const t = movable[Math.floor(Math.random() * movable.length)];
+      const idx = order.indexOf(t.col);
+      t.col = order[(idx + 1) % order.length];
+      render();
+    }, 2600);
+  })();
+
+  // Real (if small) behavior: build a mailto: link from the entered
+  // email rather than pretending to submit to a server that doesn't
+  // exist on a static page.
+  document.getElementById('signupForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const email = document.getElementById('signupEmail').value.trim();
+    const note = document.getElementById('signupNote');
+    if(!email) return;
+    const subject = encodeURIComponent('DeskFlow early access request');
+    const body = encodeURIComponent('Hi DeskFlow team,\n\nI\'d like early access for my company.\n\nMy email: ' + email);
+    window.location.href = 'mailto:hello@deskflow.app?subject=' + subject + '&body=' + body;
+    note.textContent = 'Opening your email app...';
+  });
+</script>
+
+</body>
+</html>
